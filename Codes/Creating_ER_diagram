@@ -1,0 +1,127 @@
+import sqlite3
+
+
+DB_PATH = "C:\\Users\\SUDE\\Desktop\\442 SQL project\\mrp_database_final.db"
+conn = sqlite3.connect(DB_PATH)
+cursor = conn.cursor()
+
+
+cursor.executescript("""
+CREATE TABLE IF NOT EXISTS PLAN (
+    planId INTEGER PRIMARY KEY,
+    planName TEXT NOT NULL,
+    startDate DATE,
+    endDate DATE,
+    horizonLength INTEGER,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS PERIOD (
+    periodId INTEGER PRIMARY KEY,
+    planId_FK INTEGER,
+    periodStart DATE,
+    periodEnd DATE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    typeId_FK INTEGER,
+    FOREIGN KEY (planId_FK) REFERENCES PLAN(planId) ON DELETE CASCADE,
+    FOREIGN KEY (typeId_FK) REFERENCES PeriodTypes(typeId)
+);
+
+CREATE TABLE IF NOT EXISTS PeriodTypes (
+    typeId INTEGER PRIMARY KEY,
+    typeName TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS UnitOfMeasure (
+    unitId INTEGER PRIMARY KEY,
+    unitName TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS SUPPLIER (
+    supplierId INTEGER PRIMARY KEY,
+    supplierName TEXT NOT NULL,
+    supplierLocation TEXT,
+    contactInfo TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ITEM (
+    itemId INTEGER PRIMARY KEY,
+    unitId_FK INTEGER,
+    itemName TEXT NOT NULL,
+    safetyStock INTEGER,
+    onHandStock INTEGER,
+    leadTime INTEGER,
+    lotSize INTEGER,
+    storageCost DECIMAL,
+    supplierId_FK INTEGER,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (unitId_FK) REFERENCES UnitOfMeasure(unitId),
+    FOREIGN KEY (supplierId_FK) REFERENCES SUPPLIER(supplierId)
+);
+
+CREATE TABLE IF NOT EXISTS OrderStatus (
+    statusId INTEGER PRIMARY KEY,
+    statusName TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS CUSTOMER (
+    customerId INTEGER PRIMARY KEY,
+    customerName TEXT NOT NULL,
+    customerLocation TEXT,
+    customerType TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ORDERS (
+    orderId INTEGER PRIMARY KEY,
+    itemId_FK INTEGER,
+    periodId_FK INTEGER,
+    statusId_FK INTEGER,
+    customerId_FK INTEGER,
+    orderQty INTEGER NOT NULL,
+    orderDate DATE,
+    expectedDelivery DATE,
+    totalPrice DECIMAL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (itemId_FK) REFERENCES ITEM(itemId),
+    FOREIGN KEY (periodId_FK) REFERENCES PERIOD(periodId),
+    FOREIGN KEY (statusId_FK) REFERENCES OrderStatus(statusId),
+    FOREIGN KEY (customerId_FK) REFERENCES CUSTOMER(customerId)
+);
+
+CREATE TABLE IF NOT EXISTS BILL_OF_MATERIALS (
+    bomId INTEGER PRIMARY KEY,
+    parentItemId_FK INTEGER,
+    childItemId_FK INTEGER,
+    quantity DECIMAL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parentItemId_FK) REFERENCES ITEM(itemId),
+    FOREIGN KEY (childItemId_FK) REFERENCES ITEM(itemId)
+);
+
+CREATE TABLE IF NOT EXISTS MRP_CALCULATIONS (
+    calcId INTEGER PRIMARY KEY,
+    itemId_FK INTEGER,
+    periodId_FK INTEGER,
+    plannedOrderQty INTEGER,
+    leadTime DECIMAL,
+    grossRequirement INTEGER,
+    scheduledReceipts INTEGER,
+    netRequirement INTEGER,
+    plannedRelease INTEGER,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (itemId_FK) REFERENCES ITEM(itemId),
+    FOREIGN KEY (periodId_FK) REFERENCES PERIOD(periodId)
+);
+""")
+
+
+conn.commit()
+conn.close()
+
+print("Database tables created!")

@@ -1,0 +1,16 @@
+import sqlite3
+import pandas as pd
+
+DB_PATH = "C:\\Users\\SUDE\\Desktop\\442 SQL project\\mrp_database_final.db"
+conn = sqlite3.connect(DB_PATH)
+
+df_mrp_results = pd.read_sql_query("SELECT * FROM MRP_CALCULATIONS;", conn)
+
+
+output_path = "C:\\Users\\SUDE\\Desktop\\442 SQL project\\MRP_results_5.csv"
+df_mrp_results.to_csv(output_path, index=False)
+
+
+conn.close()
+
+print(f"MRP calculations saved ") 

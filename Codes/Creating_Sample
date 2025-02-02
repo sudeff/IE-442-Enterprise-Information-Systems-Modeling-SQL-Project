@@ -1,0 +1,34 @@
+import sqlite3
+import pandas as pd
+
+DB_PATH = "C:\\Users\\SUDE\\Desktop\\442 SQL project\\mrp_database_final.db"
+
+
+conn = sqlite3.connect(DB_PATH)
+cursor = conn.cursor()
+
+
+CSV_PATH = "C:\\Users\\SUDE\\Desktop\\442 SQL project\\Updated_MRP_Data.csv"
+df_sample = pd.read_csv(CSV_PATH)
+
+(#to prevent repetation)
+cursor.executemany("""
+INSERT OR IGNORE INTO SUPPLIER (supplierName, supplierLocation, contactInfo) 
+VALUES (?, ?, ?)
+""", [(supplier, "Unknown Location", "Unknown Contact") for supplier in df_sample["supplier"].unique()])
+
+cursor.executemany("""
+INSERT INTO ITEM (itemName, unitId_FK, safetyStock, onHandStock, leadTime, lotSize, storageCost, supplierId_FK)
+VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT supplierId FROM SUPPLIER WHERE supplierName = ?))
+""", df_sample[['itemName', 'unitId_FK', 'safetyStock', 'onHandStock', 'leadTime', 'lotSize', 'storageCost', 'supplier']].values.tolist())
+
+cursor.executemany("""
+INSERT INTO ORDERS (itemId_FK, orderQty, orderDate, expectedDelivery, totalPrice, customerId_FK, periodId_FK, statusId_FK)
+VALUES ((SELECT itemId FROM ITEM WHERE itemName = ?), ?, ?, ?, ?, 1, 1, 1)
+""", df_sample[['itemName', 'orderQty', 'orderDate', 'expectedDelivery', 'totalPrice']].values.tolist())
+
+
+conn.commit()
+conn.close()
+
+print("Sample data loaded!")

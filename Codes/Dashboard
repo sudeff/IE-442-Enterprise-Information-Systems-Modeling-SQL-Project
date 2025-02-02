@@ -1,0 +1,66 @@
+import streamlit as st
+import sqlite3
+import pandas as pd
+
+
+DB_PATH = "C:\\Users\\SUDE\\Desktop\\442 SQL project\\mrp_database_final.db"
+
+def run_mrp_calculation():
+    """MRP hesaplamalarını çalıştırır."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    INSERT INTO MRP_CALCULATIONS (itemId_FK, periodId_FK, plannedOrderQty, leadTime, grossRequirement, scheduledReceipts, netRequirement, plannedRelease)
+    SELECT 
+        i.itemId, 
+        1 AS periodId_FK,
+        CASE 
+            WHEN (o.orderQty + i.safetyStock - i.onHandStock) > 0 
+            THEN (o.orderQty + i.safetyStock - i.onHandStock) 
+            ELSE 0 
+        END AS plannedOrderQty,
+        i.leadTime,
+        o.orderQty AS grossRequirement,
+        0 AS scheduledReceipts,
+        CASE 
+            WHEN (o.orderQty + i.safetyStock - i.onHandStock) > 0 
+            THEN (o.orderQty + i.safetyStock - i.onHandStock) 
+            ELSE 0 
+        END AS netRequirement,
+        CASE 
+            WHEN (o.orderQty + i.safetyStock - i.onHandStock) > 0 
+            THEN (o.orderQty + i.safetyStock - i.onHandStock) 
+            ELSE 0 
+        END AS plannedRelease
+    FROM ITEM i
+    JOIN ORDERS o ON i.itemId = o.itemId_FK;
+    """)
+    
+    conn.commit()
+    conn.close()
+    st.success("MRP hesaplamaları tamamlandı!")
+
+def get_mrp_results():
+    """Returns MRP calculation results."""
+    conn = sqlite3.connect(DB_PATH)
+    df = pd.read_sql_query("SELECT * FROM MRP_CALCULATIONS", conn)
+    conn.close()
+    return df
+
+
+st.title("MRP Calculations")
+st.write("This application runs MRP calculations and displays the results.")
+
+if st.button("Run MRP Calculations"):
+    run_mrp_calculation()
+
+
+if st.button("
+22 / 5.000
+Show MRP Results"):
+    df_results = get_mrp_results()
+    st.write("MRP Calculation Results")
+    st.dataframe(df_results)
+
+

@@ -1,0 +1,41 @@
+import pandas as pd
+import sqlite3
+
+
+DB_PATH = "C:\\Users\\SUDE\\Desktop\\442 SQL project\\mrp_database_final.db"
+
+
+conn = sqlite3.connect(DB_PATH)
+cursor = conn.cursor()
+
+cursor.execute("""
+INSERT INTO MRP_CALCULATIONS (itemId_FK, periodId_FK, plannedOrderQty, leadTime, grossRequirement, scheduledReceipts, netRequirement, plannedRelease)
+SELECT 
+    i.itemId, 
+    1 AS periodId_FK,
+    CASE 
+        WHEN (o.orderQty + i.safetyStock - i.onHandStock) > 0 
+        THEN (o.orderQty + i.safetyStock - i.onHandStock) 
+        ELSE 0 
+    END AS plannedOrderQty,
+    i.leadTime,
+    o.orderQty AS grossRequirement,
+    0 AS scheduledReceipts,
+    CASE 
+        WHEN (o.orderQty + i.safetyStock - i.onHandStock) > 0 
+        THEN (o.orderQty + i.safetyStock - i.onHandStock) 
+        ELSE 0 
+    END AS netRequirement,
+    CASE 
+        WHEN (o.orderQty + i.safetyStock - i.onHandStock) > 0 
+        THEN (o.orderQty + i.safetyStock - i.onHandStock) 
+        ELSE 0 
+    END AS plannedRelease
+FROM ITEM i
+JOIN ORDERS o ON i.itemId = o.itemId_FK;
+""")
+
+conn.commit()
+conn.close()
+
+print("MRP calculations completed!")
